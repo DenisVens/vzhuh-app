@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Любимое - Вжух</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <a href="index.html" class="brand-logo">
+                <i class="fas fa-bolt"></i>
+                <span>Вжух</span>
+            </a>
+            <div class="nav-section-title">Меню</div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link"><i class="fas fa-store"></i> Рестораны</a>
+                <a href="favorites.html" class="nav-link"><i class="fas fa-heart"></i> Любимое</a>
+                <a href="orders.html" class="nav-link active"><i class="fas fa-clock"></i> Заказы</a>
+                <a href="maps.html" class="nav-link"><i class="fas fa-map"></i> Карты</a>
+                <a href="profile.html" class="nav-link"><i class="fas fa-user"></i> Профиль</a>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i> Настройки</a>
+            </nav>
+            <div class="nav-section-title">Категории</div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">🍰 Все</a>
+                <a href="index.html?tag=Бургеры" class="nav-link">🍔 Бургеры</a>
+                <a href="index.html?tag=Суши" class="nav-link">🍣 Суши и роллы</a>
+                <a href="index.html?tag=Пицца" class="nav-link">🍕 Пицца</a>
+                <a href="index.html?tag=Напитки" class="nav-link">🥤 Напитки</a>
+                <a href="index.html?tag=Хачапури" class="nav-link">🧇  Хачапури</a>
+                <a href="index.html?tag=Хинкали" class="nav-link">🥘  Хинкали</a>
+                <a href="index.html?tag=Гриль" class="nav-link">🥩 Гриль</a>
+                <a href="index.html?tag=Горячее" class="nav-link">🥣 Горячее</a>
+                <a href="index.html?tag=Десерты" class="nav-link">🧁 Десерты</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <button class="header-cart-btn" onclick="cart.toggle()">
+                    <i class="fas fa-shopping-basket"></i> <span id="header-price">0 ₽</span>
+                </button>
+            </header>
+
+            <h2 class="section-title">Любимые рестораны</h2>
+            
+            <div class="restaurants-grid" id="favorites-grid">
+            </div>
+        </main>
+    </div>
+
+    <div class="cart-backdrop" id="cartBackdrop" onclick="cart.toggle()"></div>
+    <div class="cart-modal" id="cartModal">
+        <div class="cart-header">
+            <h2>Корзина</h2>
+            <button class="cart-clear-btn" onclick="cart.clear()">Очистить</button>
+            <button class="close-cart-mobile" onclick="cart.toggle()">&times;</button>
+        </div>
+        <div class="cart-items-container" id="cart-items"></div>
+        <div class="cart-footer">
+            <div class="cart-total-row"><span>Итого</span><span id="cart-total-price">0 ₽</span></div>
+            <button class="checkout-btn" onclick="cart.checkout()">Вжух, оформить!</button>
+        </div>
+    </div>
+
+    <div class="product-modal-backdrop" id="productModal">
+        <div class="product-modal-content">
+            <button class="pm-close" onclick="closeProductModal()">&times;</button>
+            <div class="pm-image-col">
+                <img id="pm-img" src="" alt="">
+            </div>
+            <div class="pm-info-col">
+                <h2 class="pm-title" id="pm-title"></h2>
+                <div class="pm-weight" id="pm-weight"></div>
+                
+                <p class="pm-desc" id="pm-desc"></p>
+                
+                <div class="pm-nutrition">
+                    <div class="pm-nut-item">
+                        <span class="pm-nut-val" id="pm-cal"></span>
+                        <span class="pm-nut-label">Ккал</span>
+                    </div>
+                    <div class="pm-nut-item">
+                        <span class="pm-nut-val" id="pm-prot"></span>
+                        <span class="pm-nut-label">Белки</span>
+                    </div>
+                    <div class="pm-nut-item">
+                        <span class="pm-nut-val" id="pm-fat"></span>
+                        <span class="pm-nut-label">Жиры</span>
+                    </div>
+                    <div class="pm-nut-item">
+                        <span class="pm-nut-val" id="pm-carb"></span>
+                        <span class="pm-nut-label">Угл.</span>
+                    </div>
+                </div>
+
+                <div class="pm-footer">
+                    <div class="pm-price" id="pm-price"></div>
+                    <button class="pm-add-btn" id="pm-add-btn">Вжух, в корзину!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/pages.js"></script>
+</body>
+</html>

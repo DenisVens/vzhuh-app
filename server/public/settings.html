@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройки - Вжух</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <a href="index.html" class="brand-logo">
+                <i class="fas fa-bolt"></i>
+                <span>Вжух</span>
+            </a>
+            <div class="nav-section-title">Меню</div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link"><i class="fas fa-store"></i> Рестораны</a>
+                <a href="favorites.html" class="nav-link"><i class="fas fa-heart"></i> Любимое</a>
+                <a href="orders.html" class="nav-link"><i class="fas fa-clock"></i> Заказы</a>
+                <a href="maps.html" class="nav-link"><i class="fas fa-map"></i> Карты</a>
+                <a href="profile.html" class="nav-link"><i class="fas fa-user"></i> Профиль</a>
+                <a href="settings.html" class="nav-link active"><i class="fas fa-cog"></i> Настройки</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div style="flex:1"></div>
+                <button class="header-cart-btn" onclick="cart.toggle()">
+                    <i class="fas fa-shopping-basket"></i> <span id="header-price">0 ₽</span>
+                </button>
+            </header>
+
+            <h2 class="section-title">Настройки</h2>
+            
+            <div class="settings-container">
+                <form id="settings-form">
+                    <div class="form-group">
+                        <label>Тема оформления</label>
+                        <select id="theme-select" class="form-select">
+                            <option value="light">Светлая</option>
+                            <option value="dark">Темная</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Предпочитаемые карты</label>
+                        <select id="map-select" class="form-select">
+                            <option value="yandex">Яндекс Карты</option>
+                            <option value="google">Google Maps</option>
+                            <option value="2gis">2GIS</option>
+                        </select>
+                        <small style="color:gray; margin-top:5px; display:block">Эти карты будут использоваться на вкладке "Карты"</small>
+                    </div>
+                    
+                    <button type="submit" class="save-btn">Сохранить</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- Корзина -->
+    <div class="cart-backdrop" id="cartBackdrop" onclick="cart.toggle()"></div>
+    <div class="cart-modal" id="cartModal">
+        <div class="cart-header">
+            <h2>Корзина</h2>
+            <button class="cart-clear-btn" onclick="cart.clear()">Очистить</button>
+            <button class="close-cart-mobile" onclick="cart.toggle()">&times;</button>
+        </div>
+        <div class="cart-items-container" id="cart-items"></div>
+        <div class="cart-footer">
+            <div class="cart-total-row"><span>Итого</span><span id="cart-total-price">0 ₽</span></div>
+            <button class="checkout-btn" onclick="cart.checkout()">Вжух, оформить!</button>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/pages.js"></script>
+</body>
+</html>
