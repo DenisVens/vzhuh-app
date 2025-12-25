@@ -101,7 +101,7 @@ app.post('/api/seed', async (req, res) => {
     res.send('База заполнена (раскомментируй код)');
 });
 
-app.get('*', (req, res) => {
+app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
@@ -116,3 +116,4 @@ mongoose.connect(MONGO_URI)
 app.listen(PORT, () => {
     console.log(`🚀 Server started on port ${PORT}`);
 });
+
