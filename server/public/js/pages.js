@@ -1,8 +1,13 @@
+// js/pages.js
+
+// --- Глобальные функции (доступны из HTML) ---
 
 window.deleteOrder = function(id) {
     if(!confirm('Удалить этот заказ из истории?')) return;
     
     let orders = JSON.parse(localStorage.getItem('vzhuh_orders')) || [];
+    // Если на бэкенде нет удаления, удаляем локально для вида, 
+    // но в идеале тут нужен fetch DELETE запрос
     orders = orders.filter(o => o.id !== id);
     localStorage.setItem('vzhuh_orders', JSON.stringify(orders));
     
@@ -27,8 +32,7 @@ window.toggleFavorite = function(id) {
 
 window.openProductModal = function(itemId) {
     let product;
-    // Безопасная проверка на существование db
-    if(typeof db !== 'undefined') {
+    if(typeof db !== 'undefined' && db.restaurants) {
         db.restaurants.forEach(r => {
             const found = r.menu.find(i => i.id === itemId);
             if(found) product = found;
@@ -40,7 +44,9 @@ window.openProductModal = function(itemId) {
     document.getElementById('pm-title').innerText = product.name;
     document.getElementById('pm-weight').innerText = `${product.weight} г • ${product.calories} ккал`;
     document.getElementById('pm-desc').innerText = product.desc || "Описание отсутствует";
-    document.getElementById('pm-price').innerText = `${priceFormat(product.price)} ₽`;
+    // Используем глобальную функцию priceFormat, если она есть, иначе просто число
+    const price = typeof priceFormat === 'function' ? priceFormat(product.price) : product.price;
+    document.getElementById('pm-price').innerText = `${price} ₽`;
 
     document.getElementById('pm-prot').innerText = product.protein || '-';
     document.getElementById('pm-fat').innerText = product.fats || '-';
@@ -70,22 +76,25 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// --- Логика страниц при загрузке ---
-document.addEventListener('DOMContentLoaded', () => {
-    //ждем пока данные загрузятся с сервера(бд)
-    await fetchRestaurants();
+// --- ГЛАВНАЯ ЛОГИКА ЗАГРУЗКИ ---
+document.addEventListener('DOMContentLoaded', async () => {
+    
+    // 1. Ждем данные с сервера
+    const loaded = await fetchRestaurants();
+
+    // Если данные не загрузились, db.restaurants будет пустым, но код продолжит работать
     
     const params = new URLSearchParams(window.location.search);
     const savedFavs = JSON.parse(localStorage.getItem('vzhuh_favs')) || [];
     const currentTag = params.get('tag');
 
-    // 1. Главная (index.html)
+    // --- СТРАНИЦА: ГЛАВНАЯ (index.html) ---
     const restGrid = document.querySelector('.restaurants-grid:not(#favorites-grid)');
     if (restGrid) {
         
-        // Популярное
+        // Популярное (Слайдер сверху)
         const popContainer = document.getElementById('popular-section');
-        if(popContainer && typeof db !== 'undefined') {
+        if(popContainer && db.restaurants.length > 0) {
             const popularItems = [];
             db.restaurants.slice(0, 5).forEach(r => {
                 if(r.menu.length > 0) popularItems.push({ ...r.menu[0], rName: r.name });
@@ -102,9 +111,14 @@ document.addEventListener('DOMContentLoaded', () => {
             `).join('');
         }
 
+        // Список ресторанов
         const renderList = (list) => {
             if (list.length === 0) {
-                restGrid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color: var(--text-gray)">Ничего не найдено :(</p>`;
+                if (!loaded) {
+                    restGrid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color: red;">Ошибка подключения к серверу</p>`;
+                } else {
+                    restGrid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color: var(--text-gray)">Ничего не найдено :(</p>`;
+                }
                 return;
             }
             restGrid.innerHTML = list.map(rest => {
@@ -132,36 +146,35 @@ document.addEventListener('DOMContentLoaded', () => {
             `}).join('');
         };
 
-        if(typeof db !== 'undefined') {
-            let currentList = db.restaurants;
-            if (currentTag) {
-                currentList = db.restaurants.filter(r => r.tags.includes(currentTag));
-                const titleEl = document.querySelector('.section-title.rest-title-main');
-                if(titleEl) titleEl.innerText = currentTag;
-            }
-            renderList(currentList);
+        let currentList = db.restaurants;
+        if (currentTag) {
+            currentList = db.restaurants.filter(r => r.tags.includes(currentTag));
+            const titleEl = document.querySelector('.section-title.rest-title-main');
+            if(titleEl) titleEl.innerText = currentTag;
+        }
+        renderList(currentList);
 
-            const searchInput = document.getElementById('main-search');
-            if(searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    const val = e.target.value.toLowerCase();
-                    if(!val) {
-                        renderList(currentList);
-                        return;
-                    }
-                    const filtered = currentList.filter(r => 
-                        r.name.toLowerCase().includes(val) || 
-                        r.tags.some(t => t.toLowerCase().includes(val))
-                    );
-                    renderList(filtered);
-                });
-            }
+        // Поиск
+        const searchInput = document.getElementById('main-search');
+        if(searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const val = e.target.value.toLowerCase();
+                if(!val) {
+                    renderList(currentList);
+                    return;
+                }
+                const filtered = currentList.filter(r => 
+                    r.name.toLowerCase().includes(val) || 
+                    r.tags.some(t => t.toLowerCase().includes(val))
+                );
+                renderList(filtered);
+            });
         }
     }
 
-    // 2. Любимое
+    // --- СТРАНИЦА: ЛЮБИМОЕ (favorites.html) ---
     const favGrid = document.getElementById('favorites-grid');
-    if (favGrid && typeof db !== 'undefined') {
+    if (favGrid) {
         const favoriteRestaurants = db.restaurants.filter(r => savedFavs.includes(r.id));
         if (favoriteRestaurants.length === 0) {
             favGrid.innerHTML = `
@@ -194,13 +207,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 3. Ресторан
+    // --- СТРАНИЦА: РЕСТОРАН (restaurant.html) ---
     const menuContainer = document.getElementById('menu-container');
-    if (menuContainer && typeof db !== 'undefined') {
+    if (menuContainer) {
         const id = parseInt(params.get('id'));
         const rest = db.restaurants.find(r => r.id === id);
+        
         if (!rest) {
-            menuContainer.innerHTML = '<h2>Ресторан не найден</h2><a href="index.html">На главную</a>';
+            menuContainer.innerHTML = '<h2>Ресторан не найден или данные загружаются...</h2><a href="index.html">На главную</a>';
         } else {
             document.getElementById('rest-title').innerText = rest.name;
             document.getElementById('rest-meta').innerText = `${rest.tags.join(', ')} • ${rest.time}`;
@@ -214,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p style="color: gray; font-size: 0.9rem">${item.weight}г</p>
                     </div>
                     <div class="food-footer">
-                        <span class="food-price">${priceFormat(item.price)} ₽</span>
+                        <span class="food-price">${item.price} ₽</span>
                         <button class="food-add-btn-small" onclick="event.stopPropagation(); cart.add(${item.id})">
                             <i class="fas fa-plus"></i>
                         </button>
@@ -224,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 4. Профиль
+    // --- СТРАНИЦА: ПРОФИЛЬ (profile.html) ---
     const profileForm = document.getElementById('profile-form');
     if (profileForm) {
         const user = JSON.parse(localStorage.getItem('vzhuh_user'));
@@ -255,12 +269,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 5. Заказы
+    // --- СТРАНИЦА: ЗАКАЗЫ (orders.html) ---
     const ordersContainer = document.getElementById('orders-list');
     if (ordersContainer) {
+        // Тут можно сделать еще один запрос на сервер fetch('/api/orders')
+        // Но пока используем старую логику с localStorage для простоты, 
+        // или если ты уже настроил отправку в базу, раскомментируй ниже:
+        
+        /* 
+        try {
+           const res = await fetch('/api/orders');
+           const orders = await res.json();
+           // ... логика отображения ...
+        } catch(e) { console.log(e); }
+        */
+
+        // Пока берем из localStorage (так как в common.js мы писали туда)
         const orders = JSON.parse(localStorage.getItem('vzhuh_orders')) || [];
         
-        // Находим заголовок страницы, чтобы вставить кнопку "Очистить все"
         const sectionTitle = document.querySelector('.section-title');
         
         if (orders.length === 0) {
@@ -271,7 +297,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         } else {
-            // Заменяем заголовок на структуру с кнопкой очистки
             if(sectionTitle) {
                 sectionTitle.outerHTML = `
                 <div class="clear-history-header">
@@ -300,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <p>${order.itemsText}</p>
                     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:10px">
-                        <h4>Итого: ${priceFormat(order.total)} ₽</h4>
+                        <h4>Итого: ${order.total} ₽</h4>
                         <small style="color:gray">${order.date}</small>
                     </div>
                 </div>
@@ -308,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 6. Настройки
+    // --- СТРАНИЦА: НАСТРОЙКИ (settings.html) ---
     const settingsForm = document.getElementById('settings-form');
     if(settingsForm) {
         const mapSelect = document.getElementById('map-select');
@@ -331,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 7. Карты
+    // --- СТРАНИЦА: КАРТЫ (maps.html) ---
     const mapContainer = document.querySelector('.map-container');
     if (mapContainer) {
         const provider = localStorage.getItem('vzhuh_map_provider') || 'yandex';
@@ -340,5 +365,4 @@ document.addEventListener('DOMContentLoaded', () => {
         if(activeMap) activeMap.classList.add('active');
         else document.getElementById('map-yandex').classList.add('active');
     }
-
 });
