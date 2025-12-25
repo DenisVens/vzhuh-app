@@ -272,61 +272,61 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- СТРАНИЦА: ЗАКАЗЫ (orders.html) ---
     const ordersContainer = document.getElementById('orders-list');
     if (ordersContainer) {
-        // Тут можно сделать еще один запрос на сервер fetch('/api/orders')
-        // Но пока используем старую логику с localStorage для простоты, 
-        // или если ты уже настроил отправку в базу, раскомментируй ниже:
-        
-        /* 
-        try {
-           const res = await fetch('/api/orders');
-           const orders = await res.json();
-           // ... логика отображения ...
-        } catch(e) { console.log(e); }
-        */
+        let orders = [];
 
-        // Пока берем из localStorage (так как в common.js мы писали туда)
-        const orders = JSON.parse(localStorage.getItem('vzhuh_orders')) || [];
-        
+        try {
+            // 1. Запрашиваем заказы с сервера (БД)
+            const response = await fetch('/api/orders');
+            if (response.ok) {
+                orders = await response.json();
+            }
+        } catch (e) {
+            console.error('Не удалось загрузить историю заказов', e);
+        }
+
         const sectionTitle = document.querySelector('.section-title');
         
         if (orders.length === 0) {
             ordersContainer.innerHTML = `
                 <div style="text-align:center; margin-top:3rem; color:gray">
                      <i class="fas fa-history" style="font-size:3rem; margin-bottom:1rem; opacity:0.5"></i>
-                     <p>История заказов пуста</p>
+                     <p>Вы еще ничего не заказывали (или база пуста)</p>
                 </div>
             `;
         } else {
+            // Для БД кнопку "Очистить" лучше пока скрыть или переделать под API
+            // (удаление из БД сложнее, чем из localStorage)
             if(sectionTitle) {
-                sectionTitle.outerHTML = `
-                <div class="clear-history-header">
-                    <h2 class="section-title" style="margin:0">История заказов</h2>
-                    <button class="clear-all-btn" onclick="clearAllOrders()">Очистить историю</button>
-                </div>`;
+                sectionTitle.innerText = "История заказов (из облака)";
             }
 
-            ordersContainer.innerHTML = orders.reverse().map(order => {
+            ordersContainer.innerHTML = orders.map(order => {
+                // Форматируем дату, если она пришла с сервера
+                const dateObj = new Date(order.date);
+                const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString().slice(0,5);
+                
+                // Статус
                 const statusClass = order.status === 'process' ? 'process' : 'done';
                 const statusText = order.status === 'process' ? 'Готовится <i class="fas fa-spinner fa-spin"></i>' : 'Выполнен <i class="fas fa-check"></i>';
                 
+                // MongoDB создает длинные _id, для красоты можно их обрезать или не показывать
+                const displayId = order.id || order._id.slice(-6); 
+
                 return `
                 <div class="order-card">
                     <div class="order-header">
                         <div>
-                            <h3>Заказ #${order.id}</h3>
+                            <h3>Заказ #${displayId}</h3>
                             <small style="color:gray">${order.payment || 'Оплата при получении'}</small>
                         </div>
                         <div class="order-actions">
                             <span class="order-status ${statusClass}">${statusText}</span>
-                            <button class="delete-btn" onclick="deleteOrder(${order.id})" title="Удалить заказ">
-                                <i class="fas fa-trash"></i>
-                            </button>
                         </div>
                     </div>
                     <p>${order.itemsText}</p>
                     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:10px">
                         <h4>Итого: ${order.total} ₽</h4>
-                        <small style="color:gray">${order.date}</small>
+                        <small style="color:gray">${dateStr}</small>
                     </div>
                 </div>
             `}).join('');
@@ -366,3 +366,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         else document.getElementById('map-yandex').classList.add('active');
     }
 });
+
