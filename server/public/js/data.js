@@ -1,28 +1,29 @@
+// js/data.js
+
 // Глобальная переменная для данных
-let db = {
+var db = {
     restaurants: []
 };
 
-// 1. Убираем localhost, чтобы ссылка работала везде.
-// Теперь это относительный путь.
+// URL API (относительный путь, чтобы работало и локально, и на сервере)
 const API_URL = '/api';
 
-// 2. Функция, которая запрашивает данные с нашего сервера
+// Функция загрузки данных
 async function fetchRestaurants() {
     try {
+        console.log('🔄 Начинаю загрузку данных...');
         const response = await fetch(`${API_URL}/restaurants`);
+        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`Ошибка HTTP: ${response.status}`);
         }
+        
         const data = await response.json();
-        db.restaurants = data; // Заполняем нашу переменную данными с сервера
-        console.log('✅ Данные с сервера получены:', db.restaurants.length, 'ресторанов');
+        db.restaurants = data;
+        console.log(`✅ Данные загружены: ${db.restaurants.length} ресторанов`);
+        return true;
     } catch (error) {
-        console.error('❌ Ошибка при загрузке данных с сервера:', error);
-        // Можно показать ошибку на странице, если что-то пошло не так
-        const restGrid = document.querySelector('.restaurants-grid');
-        if(restGrid) {
-            restGrid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color: red;">Не удалось загрузить рестораны. Сервер недоступен.</p>`;
-        }
+        console.error('❌ Не удалось загрузить данные:', error);
+        return false;
     }
 }
