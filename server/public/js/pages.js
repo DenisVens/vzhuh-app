@@ -72,6 +72,9 @@ document.addEventListener('click', (e) => {
 
 // --- Логика страниц при загрузке ---
 document.addEventListener('DOMContentLoaded', () => {
+    //ждем пока данные загрузятся с сервера(бд)
+    await fetchRestaurants();
+    
     const params = new URLSearchParams(window.location.search);
     const savedFavs = JSON.parse(localStorage.getItem('vzhuh_favs')) || [];
     const currentTag = params.get('tag');
@@ -337,4 +340,5 @@ document.addEventListener('DOMContentLoaded', () => {
         if(activeMap) activeMap.classList.add('active');
         else document.getElementById('map-yandex').classList.add('active');
     }
+
 });
