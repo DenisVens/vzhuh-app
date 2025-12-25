@@ -3,10 +3,13 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
-app.use(express.static('public')); // Позволяет читать JSON в запросах
+app.use(express.json()); // Позволяет читать JSON в запросах
 app.use(cors()); // Разрешает запросы с фронтенда
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 // --- 1. СХЕМЫ БАЗЫ ДАННЫХ ---
 
@@ -98,10 +101,13 @@ app.post('/api/seed', async (req, res) => {
     res.send('База заполнена (раскомментируй код)');
 });
 
-// --- 3. ЗАПУСК ---
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
+// --- ЗАПУСК ---
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI; // Ссылка из MongoDB Atlas
+const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI)
     .then(() => console.log('✅ Connected to MongoDB'))
