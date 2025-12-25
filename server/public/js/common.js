@@ -160,34 +160,43 @@ const cart = {
     // Финальное оформление после выбора оплаты
     async finalizeOrder(paymentMethod) {
     // Собираем данные
-    const user = JSON.parse(localStorage.getItem('vzhuh_user')); // Берем телефон юзера
-    const orderData = {
-        customerName: user ? user.name : 'Гость',
-        phone: user ? user.phone : 'Не указан',
-        itemsText: this.items.map(i => `${i.name} x${i.count}`).join(', '),
-        total: this.items.reduce((sum, i) => sum + (i.price * i.count), 0),
-        payment: paymentMethod
-    };
+    const user = JSON.parse(localStorage.getItem('vzhuh_user'));
+        
+        // Собираем данные для сервера
+        const orderData = {
+            customerName: user ? user.name : 'Гость',
+            phone: user ? user.phone : 'Не указан',
+            itemsText: this.items.map(i => `${i.name} x${i.count}`).join(', '),
+            total: this.items.reduce((sum, i) => sum + (i.price * i.count), 0),
+            payment: paymentMethod
+        };
 
-    try {
-        // ОТПРАВКА НА СЕРВЕР
-        const response = await fetch(`${API_URL}/orders`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(orderData)
-        });
+        try {
+            // Отправляем запрос на сервер
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
 
-        if (response.ok) {
-            this.clear();
-            closePaymentModal();
-            alert(`Заказ успешно отправлен на кухню!`);
-            // Можно перенаправить на страницу успеха
-            // window.location.href = 'orders.html';
+            if (response.ok) {
+                // Если сервер ответил "ОК"
+                const savedOrder = await response.json();
+                console.log('Заказ сохранен в БД:', savedOrder);
+                
+                this.clear(); // Очищаем корзину
+                closePaymentModal(); // Закрываем окно
+                
+                alert(`Заказ #${savedOrder.id || 'New'} успешно принят!`);
+                window.location.href = 'orders.html'; // Переходим к истории
+            } else {
+                alert('Ошибка сервера. Попробуйте позже.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Не удалось отправить заказ. Проверьте интернет.');
         }
-    } catch (e) {
-        alert('Ошибка при отправке заказа');
     }
-}
 };
 
 // --- МОДАЛЬНЫЕ ОКНА (HTML Injection) ---
@@ -263,4 +272,5 @@ document.addEventListener('DOMContentLoaded', () => {
     theme.init();
     injectModals();
     cart.render();
+
 });
